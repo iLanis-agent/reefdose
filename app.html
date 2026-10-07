@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ReefDose - reef tank dosing</title>
+<style>
+:root{--bg:#0d1420;--card:#131e2e;--line:#21344c;--txt:#e6eef8;--dim:#93a8c4;--acc:#6fc4e8;--warn:#e5c07b;--bad:#e06c75;--ok:#7bc87b}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.5 -apple-system,'Segoe UI',Roboto,sans-serif;padding:22px 14px}
+main{max-width:860px;margin:0 auto}
+h1{font-size:1.5em;margin:0 0 4px}h1 span{color:var(--acc)}
+.sub{color:var(--dim);margin:0 0 18px;font-size:.92em}
+a.back{color:var(--dim);font-size:.85em}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:14px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+label{display:block;color:var(--dim);font-size:.78em;margin-bottom:3px}
+input,select{width:100%;background:#0d1420;border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:9px 10px;font-size:1em}
+input:focus{outline:1px solid var(--acc)}
+button.ghost{background:#1b2a3f;color:var(--txt);border:1px solid var(--line);font-weight:400;padding:8px 12px;font-size:.85em;border-radius:9px;cursor:pointer}
+.presets{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+table{width:100%;border-collapse:collapse;margin-top:12px;font-size:.95em}
+td{padding:7px 4px;border-bottom:1px solid var(--line);vertical-align:top}
+td:first-child{color:var(--dim);white-space:nowrap}
+td.v{font-weight:600;white-space:nowrap}
+.verdicts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0}
+.vc{background:#0f1a29;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.vc .k{color:var(--dim);font-size:.72em;letter-spacing:.05em}
+.vc .n{font-size:1.35em;font-weight:700;margin:2px 0}
+.vc .tag{font-size:.72em;font-weight:700;display:inline-block;padding:1px 7px;border-radius:8px;margin-bottom:3px}
+.tag.ok{background:#16351f;color:var(--ok)}.tag.warn{background:#3a331e;color:var(--warn)}.tag.bad{background:#3a1e24;color:var(--bad)}
+.vc .h{color:var(--dim);font-size:.74em}
+.err{background:#3a1e24;border:1px solid var(--bad);color:#f0b9c0;border-radius:10px;padding:12px 16px;margin:12px 0;display:none}
+.note{color:#5d7391;font-size:.8em;margin-top:14px}
+h2{font-size:1.08em;margin:0 0 10px}
+</style>
+</head>
+<body>
+<main>
+<a class="back" href="index.html">&larr; ReefDose</a>
+<h1>Reef<span>Dose</span></h1>
+<p class="sub">Enter tank volume and today's test-kit numbers. Every section works from them.</p>
+
+<div class="card">
+<h2>1. Tank and test results</h2>
+<div class="grid">
+<div><label>Net water volume (L)</label><input id="vol" type="number" step="any" value="300"></div>
+<div><label>Calcium (ppm)</label><input id="ca" type="number" step="any" value="390"></div>
+<div><label>Alkalinity (dKH)</label><input id="alk" type="number" step="any" value="7.2"></div>
+<div><label>Magnesium (ppm)</label><input id="mg" type="number" step="any" value="1280"></div>
+</div>
+<div class="presets" id="presets"></div>
+</div>
+<div class="err" id="err"></div>
+
+<div class="card">
+<h2>2. Where you stand</h2>
+<div id="verdicts"></div>
+</div>
+
+<div class="card">
+<h2>3. Fix it - grams to target</h2>
+<div id="fix"></div>
+<p class="note">Targets are mid-range published values (Ca 420 ppm, Alk 8.5 dKH, Mg 1300 ppm). Splits follow commonly published safe daily-change guidance (Ca 50 ppm, Alk 1.4 dKH, Mg 100 ppm per day). Anything already at or above target is left alone - lowering is a water-change job.</p>
+</div>
+
+<div class="card">
+<h2>4. Daily two-part (keep-up dosing)</h2>
+<div class="grid">
+<div><label>Measured alkalinity consumption (dKH/day)</label><input id="cons" type="number" step="any" value="0.7"></div>
+</div>
+<div id="twoPart"></div>
+<p class="note">Calcification consumes calcium with alkalinity in a fixed ratio (20 ppm Ca per meq/L, about 7.1 ppm per dKH), so the calcium part follows from your alkalinity consumption.</p>
+</div>
+
+<div class="card">
+<h2>5. Water change outcome</h2>
+<div class="grid">
+<div><label>Change (%)</label><input id="wcf" type="number" step="any" value="20"></div>
+<div><label>Salt mix Ca (ppm)</label><input id="wca" type="number" step="any" value="440"></div>
+<div><label>Salt mix Alk (dKH)</label><input id="walk" type="number" step="any" value="9.0"></div>
+<div><label>Salt mix Mg (ppm)</label><input id="wmg" type="number" step="any" value="1320"></div>
+</div>
+<div id="wc"></div>
+</div>
+
+<div class="card">
+<h2>6. Limewater (kalkwasser)</h2>
+<div class="grid">
+<div><label>Saturated limewater dosed (L/day)</label><input id="kalk" type="number" step="any" value="2"></div>
+</div>
+<div id="kalkOut"></div>
+</div>
+
+<p class="note">Model: ideal-solution stoichiometry from published molecular weights; 1 meq/L = 2.8 dKH by convention; saturated limewater taken as ~40.8 meq/L and ~804 ppm Ca at 25 C (published). Real salt purity, hydration state, test-kit error (often +/-5-10%) and tank pH shift outcomes. Verify with a test kit and raise slowly.</p>
+</main>
+<script src="engine.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const presets=[
+ {n:'Typical 300 L reef',vol:300,ca:390,alk:7.2,mg:1280},
+ {n:'New tank, freshly mixed',vol:120,ca:440,alk:9.0,mg:1320},
+ {n:'Neglected tank',vol:200,ca:340,alk:5.8,mg:1150},
+ {n:'Overdosed tank',vol:450,ca:500,alk:12.5,mg:1420}];
+presets.forEach(p=>{const b=document.createElement('button');b.className='ghost';b.textContent=p.n;
+ b.onclick=()=>{['vol','ca','alk','mg'].forEach(k=>$(k).value=p[k]);run();};$('presets').appendChild(b);});
+const fmt=(v,d=1)=>v.toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d});
+function tag(t,c){return `<span class="tag ${c}">${t}</span>`}
+function vc(k,n,tg,h){return `<div class="vc"><div class="k">${k}</div>${tg||''}<div class="n">${n}</div><div class="h">${h||''}</div></div>`}
+function showErr(m){const e=$('err');e.textContent=m;e.style.display='block';}
+function hideErr(){$('err').style.display='none';}
+function num(id){const v=parseFloat($(id).value);return isFinite(v)?v:NaN;}
+function run(){
+ hideErr();
+ const vol=num('vol'),ca=num('ca'),alk=num('alk'),mg=num('mg');
+ if(!(vol>0)||!(ca>=0)||!(alk>=0)||!(mg>=0)){showErr('Volume must be positive and test values zero or more.');return;}
+ // verdicts
+ const vC=engine.verdict('ca',ca),vA=engine.verdict('alk',alk),vM=engine.verdict('mg',mg);
+ const cls=t=>t==='IN RANGE'?'ok':(t==='LOW'?'warn':'bad');
+ let vs='<div class="verdicts">';
+ vs+=vc('CALCIUM',fmt(ca,0)+' ppm',tag(vC.tag,cls(vC.tag)),vC.hint);
+ vs+=vc('ALKALINITY',fmt(alk,1)+' dKH',tag(vA.tag,cls(vA.tag)),vA.hint);
+ vs+=vc('MAGNESIUM',fmt(mg,0)+' ppm',tag(vM.tag,cls(vM.tag)),vM.hint);
+ vs+='</div>';
+ if(ca>450&&alk>11)vs+=`<div class="err" style="display:block">Both calcium and alkalinity are above their published ranges at once - reef-keeping guidance flags this combination as an abiotic precipitation risk. Lower with water changes, not more dosing.</div>`;
+ $('verdicts').innerHTML=vs;
+ // fix it
+ let f='<table>';
+ const plan=[
+  {k:'ca',cur:ca,t:420,max:50,dose:d=>engine.caDoseGrams(d,vol).grams,name:'Calcium chloride dihydrate (CaCl2·2H2O)'},
+  {k:'alk',cur:alk,t:8.5,max:1.4,dose:d=>engine.alkDoseGrams(d,vol,'hco3').grams,name:'Baking soda (NaHCO3, baked or not)'},
+  {k:'mg',cur:mg,t:1300,max:100,dose:d=>engine.mgDoseGrams(d,vol).grams,name:'Magnesium chloride hexahydrate (MgCl2·6H2O)'}];
+ plan.forEach(p=>{
+  const c=engine.correction(p.cur,p.t,p.max);
+  if(!c)f+=`<tr><td>${p.k.toUpperCase()}</td><td class="v">at/above target</td><td>nothing to add</td></tr>`;
+  else f+=`<tr><td>+${fmt(c.delta,p.k==='alk'?1:0)} ${p.k==='alk'?'dKH':'ppm'} ${p.k.toUpperCase()}</td><td class="v">${fmt(p.dose(c.delta),1)} g</td><td>${p.name}${c.days>1?` - split over ${c.days} days (${fmt(p.dose(c.delta)/c.days,1)} g/day)`:''}</td></tr>`;
+ });
+ f+='</table>';
+ $('fix').innerHTML=f;
+ // two-part
+ const tp=engine.twoPartDaily(num('cons'),vol);
+ $('twoPart').innerHTML=tp.error?'':`<table>
+  <tr><td>Baking soda (NaHCO3)</td><td class="v">${fmt(tp.bakingSodaG,1)} g/day</td><td>or soda ash (Na2CO3) ${fmt(tp.sodaAshG,1)} g/day - raises pH more</td></tr>
+  <tr><td>Calcium chloride dihydrate</td><td class="v">${fmt(tp.calciumG,1)} g/day</td><td>covers the ${fmt(tp.caPpmPerDay,1)} ppm/day of calcium consumed with that alkalinity</td></tr>
+ </table>`;
+ // water change
+ const wc=engine.waterChange(vol,num('wcf')/100,{ca:ca,alk:alk,mg:mg},{ca:num('wca'),alk:num('walk'),mg:num('wmg')});
+ $('wc').innerHTML=wc.error?`<p class="note" style="color:var(--bad)">${wc.error}</p>`:`<div class="verdicts">`+
+  vc('CALCIUM AFTER',fmt(wc.ca,0)+' ppm','',`from ${fmt(ca,0)} ppm`)+
+  vc('ALKALINITY AFTER',fmt(wc.alk,1)+' dKH','',`from ${fmt(alk,1)} dKH`)+
+  vc('MAGNESIUM AFTER',fmt(wc.mg,0)+' ppm','',`from ${fmt(mg,0)} ppm`)+`</div>`+
+  (wc.note?`<p class="note">${wc.note}</p>`:'');
+ // kalk
+ const k=engine.kalkDaily(num('kalk'),vol);
+ $('kalkOut').innerHTML=k.error?'':`<table>
+  <tr><td>Alkalinity added</td><td class="v">+${fmt(k.dkhPerDay,2)} dKH/day</td><td>compare with your consumption above</td></tr>
+  <tr><td>Calcium added</td><td class="v">+${fmt(k.caPpmPerDay,1)} ppm/day</td><td>${k.caPpmPerDay>=engine.twoPartDaily(Math.max(0.0001,num('cons')),1).caPpmPerDay*1?'':' '}from the same saturated limewater</td></tr>
+ </table><p class="note">${k.note}</p>`;
+}
+document.querySelectorAll('input').forEach(i=>i.addEventListener('input',run));
+run();
+</script>
+</body>
+</html>
