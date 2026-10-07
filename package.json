@@ -1,0 +1,1 @@
+{"name":"reefdose","version":"1.0.0","description":"Reef aquarium chemistry dosing from test-kit numbers","scripts":{"test":"python3 tests/oracle.py && node tests/run_tests.js"},"license":"MIT"}
